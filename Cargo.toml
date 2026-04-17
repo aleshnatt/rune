@@ -1,0 +1,14 @@
+[package]
+name = "rune"
+version = "0.1.0"
+edition = "2021"
+description = "Rune: A Lattice-based Blind Relay Protocol for Post-Quantum Transport Privacy"
+license = "MIT"
+
+[dependencies]
+nc-polynomial = "0.2"
+rand = "0.9"
+sha3 = "0.10"
+
+[dev-dependencies]
+rand = "0.9"
