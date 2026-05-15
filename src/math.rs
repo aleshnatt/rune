@@ -5,7 +5,7 @@
 //! and modular reduction.
 
 use nc_polynomial::{RingContext, RingElem};
-use rand::Rng;
+use rand::{Rng, CryptoRng};
 use sha3::{Shake256, digest::{Update, ExtendableOutput, XofReader}};
 
 use crate::params::{N, Q};
@@ -63,7 +63,7 @@ pub fn inf_norm(elem: &RingElem) -> u64 {
 ///
 /// Each coefficient is independently sampled from [0, q) using rejection
 /// sampling to avoid modular bias.
-pub fn sample_uniform<R: Rng>(ctx: &RingContext, rng: &mut R) -> RingElem {
+pub fn sample_uniform<R: Rng + CryptoRng>(ctx: &RingContext, rng: &mut R) -> RingElem {
     let mut coeffs = vec![0u64; N + 1];
     for coeff in coeffs.iter_mut().take(N) {
         // Rejection sampling: draw u64, reject if ≥ largest multiple of q
@@ -89,7 +89,7 @@ pub fn sample_uniform<R: Rng>(ctx: &RingContext, rng: &mut R) -> RingElem {
 ///
 /// where a_j, b_j are independent uniform bits. This yields coefficients
 /// in the range [−η, η] with a binomial distribution centered at zero.
-pub fn sample_short<R: Rng>(ctx: &RingContext, eta: u8, rng: &mut R) -> RingElem {
+pub fn sample_short<R: Rng + CryptoRng>(ctx: &RingContext, eta: u8, rng: &mut R) -> RingElem {
     let mut coeffs = vec![0u64; N + 1];
     for coeff in coeffs.iter_mut().take(N) {
         let mut a: i64 = 0;
@@ -110,18 +110,14 @@ pub fn sample_short<R: Rng>(ctx: &RingContext, eta: u8, rng: &mut R) -> RingElem
 /// The masking must be large enough to hide the secret s when added to c·s,
 /// but bounded enough that the rejection sampling step succeeds with
 /// reasonable probability.
-pub fn sample_masking<R: Rng>(ctx: &RingContext, gamma: u64, rng: &mut R) -> RingElem {
+pub fn sample_masking<R: Rng + CryptoRng>(ctx: &RingContext, gamma: u64, rng: &mut R) -> RingElem {
     let range = 2 * gamma + 1; // number of values in [-gamma, gamma]
     let mut coeffs = vec![0u64; N + 1];
     for coeff in coeffs.iter_mut().take(N) {
-        // Sample uniform in [0, 2*gamma], then shift to [-gamma, gamma]
-        loop {
-            let sample: u64 = rng.random::<u64>() % range;
-            // No significant bias since range << u64::MAX
-            let signed = sample as i64 - gamma as i64;
-            *coeff = wrap_signed_to_modulus(signed, Q);
-            break;
-        }
+        // Sample uniformly in [0, range) using rejection sampling built into rand
+        let sample = rng.random_range(0..range);
+        let signed = sample as i64 - gamma as i64;
+        *coeff = wrap_signed_to_modulus(signed, Q);
     }
     ctx.element(&coeffs)
         .expect("masking sampling: coefficients are within bounds")
@@ -270,8 +266,8 @@ mod tests {
     fn test_hash_deterministic() {
         let ctx = ring_context();
         let elem = ctx.zero_element();
-        let seed1 = hash_to_challenge_seed(b"hello", &[elem.clone()]);
-        let seed2 = hash_to_challenge_seed(b"hello", &[elem]);
+        let seed1 = hash_to_challenge_seed(b"hello", std::slice::from_ref(&elem));
+        let seed2 = hash_to_challenge_seed(b"hello", std::slice::from_ref(&elem));
         assert_eq!(seed1, seed2, "same inputs must produce same seed");
     }
 }

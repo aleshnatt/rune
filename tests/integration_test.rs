@@ -51,9 +51,9 @@ fn test_different_signer_positions() {
     let mut rng = rand::rng();
 
     // Each member should be able to sign and produce a valid signature
-    for signer_idx in 0..4 {
-        let sig = ring_sign(ctx, msg, &sks[signer_idx], signer_idx, &pks, &mut rng)
-            .expect(&format!("signing at index {} should succeed", signer_idx));
+    for (signer_idx, sk) in sks.iter().enumerate().take(4) {
+        let sig = ring_sign(ctx, msg, sk, signer_idx, &pks, &mut rng)
+            .unwrap_or_else(|_| panic!("signing at index {} should succeed", signer_idx));
 
         let valid = ring_verify(ctx, msg, &sig, &pks)
             .expect("verification should not error");

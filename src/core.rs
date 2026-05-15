@@ -27,7 +27,7 @@
 //! 5. Verify ‖z_i‖_∞ < β for all i (norm bound).
 
 use nc_polynomial::{RingContext, RingElem};
-use rand::Rng;
+use rand::{Rng, CryptoRng};
 
 use crate::keys::{PublicKey, SecretKey};
 use crate::math::{
@@ -113,7 +113,7 @@ impl std::error::Error for RingError {}
 ///
 /// A `RingSignature` containing response and challenge polynomials for each
 /// ring member, or a `RingError` if the signing fails.
-pub fn ring_sign<R: Rng>(
+pub fn ring_sign<R: Rng + CryptoRng>(
     ctx: &RingContext,
     msg: &[u8],
     sk: &SecretKey,
@@ -147,7 +147,7 @@ pub fn ring_sign<R: Rng>(
         let mut masking_y_s: Option<RingElem> = None;
         let mut masking_y_e: Option<RingElem> = None;
 
-        for i in 0..k {
+        for (i, pk) in ring_pks.iter().enumerate() {
             if i == signer_index {
                 // Real signer: sample masking polynomials y_s, y_e ← U([-γ, γ]^n)
                 let y_s = sample_masking(ctx, GAMMA, rng);
@@ -182,7 +182,7 @@ pub fn ring_sign<R: Rng>(
                     .add(&z_ei)
                     .map_err(|e| RingError::ArithmeticError(format!("{:?}", e)))?;
                 let ct = c_i
-                    .mul(&ring_pks[i].t)
+                    .mul(&pk.t)
                     .map_err(|e| RingError::ArithmeticError(format!("{:?}", e)))?;
                 let w_i = az_s_e
                     .sub(&ct)
@@ -320,7 +320,7 @@ pub fn ring_verify(
 
     let mut commitments: Vec<RingElem> = Vec::with_capacity(k);
 
-    for i in 0..k {
+    for (i, pk) in ring_pks.iter().enumerate() {
         let az_s = a
             .mul(&sig.responses_s[i])
             .map_err(|e| RingError::ArithmeticError(format!("{:?}", e)))?;
@@ -328,7 +328,7 @@ pub fn ring_verify(
             .add(&sig.responses_e[i])
             .map_err(|e| RingError::ArithmeticError(format!("{:?}", e)))?;
         let ct = sig.challenges[i]
-            .mul(&ring_pks[i].t)
+            .mul(&pk.t)
             .map_err(|e| RingError::ArithmeticError(format!("{:?}", e)))?;
         let w_i = az_s_e
             .sub(&ct)

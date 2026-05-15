@@ -9,6 +9,7 @@ license = "MIT"
 nc-polynomial = "0.2"
 rand = "0.9"
 sha3 = "0.10"
+zeroize = { version = "1.8", features = ["derive"] }
 
 [dev-dependencies]
 rand = "0.9"

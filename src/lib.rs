@@ -8,12 +8,14 @@
 //! ## Algebraic Structure
 //!
 //! All operations are performed in the polynomial ring:
-//!
 //! ```text
 //!   R_q = Z_q[X] / (X^256 + 1)
 //! ```
 //!
 //! where q = 998,244,353 (an NTT-friendly prime).
+
+#![forbid(unsafe_code)]
+
 //!
 //! ## Usage
 //!

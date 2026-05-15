@@ -77,6 +77,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::assertions_on_constants)]
     fn test_parameters_consistent() {
         assert!(N.is_power_of_two(), "n must be a power of two");
         assert!(BETA > 0, "rejection bound must be positive");

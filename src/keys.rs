@@ -11,7 +11,7 @@
 //! produce their public key t_i = a·s_i + e_i.
 
 use nc_polynomial::{RingContext, RingElem};
-use rand::Rng;
+use rand::{Rng, CryptoRng};
 
 use crate::math::{sample_short, sample_uniform};
 use crate::params::ETA;
@@ -55,7 +55,7 @@ pub struct PublicKey {
 /// - `SecretKey.s` is a short polynomial (CBD with η = 2)
 /// - `PublicKey.a` is the shared ring element
 /// - `PublicKey.t = a·s + e` where e is independently sampled CBD(η)
-pub fn keygen<R: Rng>(ctx: &RingContext, a: &RingElem, rng: &mut R) -> (SecretKey, PublicKey) {
+pub fn keygen<R: Rng + CryptoRng>(ctx: &RingContext, a: &RingElem, rng: &mut R) -> (SecretKey, PublicKey) {
     // Sample short secret polynomial s ← CBD(η)
     let s = sample_short(ctx, ETA, rng);
 
@@ -82,7 +82,7 @@ pub fn keygen<R: Rng>(ctx: &RingContext, a: &RingElem, rng: &mut R) -> (SecretKe
 ///
 /// This should be called once to establish the system parameter,
 /// then distributed to all ring participants.
-pub fn generate_shared_a<R: Rng>(ctx: &RingContext, rng: &mut R) -> RingElem {
+pub fn generate_shared_a<R: Rng + CryptoRng>(ctx: &RingContext, rng: &mut R) -> RingElem {
     sample_uniform(ctx, rng)
 }
 
