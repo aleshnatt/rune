@@ -13,10 +13,8 @@ license = "MIT OR Apache-2.0"
 keywords = ["cryptography", "post-quantum", "ring-signature", "lattice", "rlwe"]
 categories = ["cryptography"]
 exclude = [
-    "paper/",
     "whitepaper/",
     ".github/",
-    "scratch.rs",
     ".DS_Store",
     "/Cargo.lock",
 ]
