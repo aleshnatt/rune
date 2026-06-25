@@ -5,6 +5,7 @@ use std::ops::Index;
 use rand_core::{CryptoRng, RngCore};
 use zeroize::Zeroize;
 
+use crate::error::RuneError;
 use crate::params::Params;
 
 /// Maximum polynomial degree supported by this implementation.
@@ -17,6 +18,24 @@ pub(crate) const MAX_N: usize = 512;
 pub struct Poly(pub(crate) Vec<i64>);
 
 impl Poly {
+    /// Builds a polynomial from centered coefficients.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RuneError::MalformedPublicKey`] if `coefficients` does not
+    /// match `params.n()` or contains a non-canonical coefficient.
+    pub fn from_coefficients(
+        coefficients: impl Into<Vec<i64>>,
+        params: &Params,
+    ) -> Result<Self, RuneError> {
+        let poly = Self(coefficients.into());
+        if poly_is_well_formed(&poly, params) {
+            Ok(poly)
+        } else {
+            Err(RuneError::MalformedPublicKey)
+        }
+    }
+
     /// Returns the number of stored coefficients.
     #[must_use]
     pub fn len(&self) -> usize {

@@ -249,6 +249,31 @@ fn test_poly_imin_does_not_panic() {
 }
 
 #[test]
+fn test_poly_from_coefficients_checked() {
+    let params = &RUNE_128;
+    let coeffs = vec![0; params.n()];
+    let poly = Poly::from_coefficients(coeffs, params).unwrap();
+    assert_eq!(poly.len(), params.n());
+}
+
+#[test]
+fn test_poly_from_coefficients_rejects_malformed() {
+    let params = &RUNE_128;
+
+    assert_eq!(
+        Poly::from_coefficients(vec![0; params.n() - 1], params),
+        Err(RuneError::MalformedPublicKey)
+    );
+
+    let mut coeffs = vec![0; params.n()];
+    coeffs[0] = i64::MIN;
+    assert_eq!(
+        Poly::from_coefficients(coeffs, params),
+        Err(RuneError::MalformedPublicKey)
+    );
+}
+
+#[test]
 fn test_determinism() {
     let params = &RUNE_128;
     let (ring, sks) = make_ring(3);
