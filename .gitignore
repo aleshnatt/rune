@@ -1,2 +1,5 @@
-/target/
-/whitepaper/
+/target
+Cargo.lock
+**/.DS_Store
+scratch.rs
+whitepaper/

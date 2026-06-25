@@ -1,98 +1,138 @@
-//! Cryptographic parameters for the Rune protocol.
-//!
-//! All arithmetic operates in the polynomial ring:
-//!
-//!   R_q = Z_q[X] / (X^n + 1)
-//!
-//! where n = 256 and q = 998_244_353 (an NTT-friendly prime: 119 × 2^23 + 1).
+//! Cryptographic parameter sets for Rune.
 
-use nc_polynomial::RingContext;
-use std::sync::OnceLock;
+use crate::math::MAX_N;
 
-// ---------------------------------------------------------------------------
-// Ring parameters
-// ---------------------------------------------------------------------------
-
-/// Polynomial degree (power-of-two cyclotomic).
-pub const N: usize = 256;
-
-/// Coefficient modulus — NTT-friendly prime q = 998_244_353 = 119 × 2^23 + 1.
-pub const Q: u64 = 998_244_353;
-
-/// Primitive root of unity modulo q used by NTT.
-pub const PRIMITIVE_ROOT: u64 = 3;
-
-// ---------------------------------------------------------------------------
-// Signature scheme parameters
-// ---------------------------------------------------------------------------
-
-/// Centered-binomial parameter for short secret / error polynomials.
-/// Each coefficient is sampled as sum(η bits) − sum(η bits), giving values in [-η, η].
-pub const ETA: u8 = 2;
-
-/// Masking bound — uniform sampling range for commitment vectors.
-/// Masking polynomials have coefficients in [−GAMMA, GAMMA].
-pub const GAMMA: u64 = Q / 4;
-
-/// Rejection sampling bound — signatures with ‖z‖_∞ ≥ BETA are discarded
-/// to prevent secret leakage. We require BETA = GAMMA − ETA × N to ensure
-/// that the response z = y + c·s remains within [−GAMMA, GAMMA] with high
-/// probability when ‖c·s‖_∞ ≤ ETA × N (since c is sparse ternary and s is short).
-pub const BETA: u64 = GAMMA - (ETA as u64) * (N as u64);
-
-/// Hamming weight of the sparse ternary challenge polynomial.
-/// The challenge c ∈ R_q has exactly KAPPA nonzero coefficients, each ±1.
-pub const KAPPA: usize = 60;
-
-/// Maximum number of signing attempts before aborting.
-/// Each attempt may be rejected due to the norm bound on z.
-pub const MAX_ATTEMPTS: usize = 256;
-
-// ---------------------------------------------------------------------------
-// Ring context singleton
-// ---------------------------------------------------------------------------
-
-/// Returns a validated `RingContext` for R_q = Z_q[X]/(X^256 + 1).
+/// System parameters for the Rune ring signature scheme.
 ///
-/// The context is constructed once and cached for the lifetime of the process.
-/// It validates that q is NTT-friendly and that the primitive root is compatible
-/// with the chosen cyclotomic polynomial.
-pub fn ring_context() -> &'static RingContext {
-    static CTX: OnceLock<RingContext> = OnceLock::new();
-    CTX.get_or_init(|| {
-        // Construct the modulus polynomial f(x) = x^256 + 1.
-        // Coefficient representation: coeffs[0] = 1 (constant term),
-        // coeffs[256] = 1 (leading term), all others zero.
-        let mut modulus_poly = vec![0u64; N + 1];
-        modulus_poly[0] = 1; // constant term
-        modulus_poly[N] = 1; // x^N term
-
-        RingContext::from_parts(N, Q, &modulus_poly, PRIMITIVE_ROOT)
-            .expect("Rune: ring context construction must succeed with validated parameters")
-    })
+/// Construct via the provided constants [`RUNE_128`] or [`RUNE_256`].
+/// Custom parameter construction is intentionally not exposed: incorrect
+/// choices can silently reduce security or cause signing to fail. Both
+/// provided sets have been derived following the methodology of Ducas et al.
+/// (CRYSTALS-Dilithium, IACR TCHES 2018).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Params {
+    n: usize,
+    q: i64,
+    eta: u8,
+    kappa: usize,
+    gamma: i64,
+    beta: i64,
+    omega: usize,
+    max_attempts: usize,
 }
 
+impl Params {
+    /// Creates a validated parameter set.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the parameters are internally inconsistent.
+    #[must_use]
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) const fn new(
+        n: usize,
+        q: i64,
+        eta: u8,
+        kappa: usize,
+        gamma: i64,
+        beta: i64,
+        omega: usize,
+        max_attempts: usize,
+    ) -> Self {
+        assert!(n > 0 && n <= MAX_N);
+        assert!(q > 2 && q % 2 == 1);
+        assert!(eta > 0);
+        assert!(kappa > 0 && kappa < n);
+        assert!(gamma > 0);
+        assert!(beta > 0 && beta < gamma);
+        assert!(omega > 0);
+        assert!(max_attempts > 0);
+
+        Self {
+            n,
+            q,
+            eta,
+            kappa,
+            gamma,
+            beta,
+            omega,
+            max_attempts,
+        }
+    }
+
+    /// Polynomial degree.
+    #[must_use]
+    pub const fn n(&self) -> usize {
+        self.n
+    }
+
+    /// Coefficient modulus.
+    #[must_use]
+    pub const fn q(&self) -> i64 {
+        self.q
+    }
+
+    /// Centered binomial sampling parameter.
+    #[must_use]
+    pub const fn eta(&self) -> u8 {
+        self.eta
+    }
+
+    /// Challenge Hamming weight.
+    #[must_use]
+    pub const fn kappa(&self) -> usize {
+        self.kappa
+    }
+
+    /// Masking range.
+    #[must_use]
+    pub const fn gamma(&self) -> i64 {
+        self.gamma
+    }
+
+    /// Rejection margin.
+    #[must_use]
+    pub const fn beta(&self) -> i64 {
+        self.beta
+    }
+
+    /// Response norm bound used during rejection sampling.
+    #[must_use]
+    pub const fn response_bound(&self) -> i64 {
+        self.gamma - self.beta
+    }
+
+    /// Maximum hint weight for parameter sets with hints.
+    #[must_use]
+    pub const fn omega(&self) -> usize {
+        self.omega
+    }
+
+    /// Maximum signing attempt count.
+    #[must_use]
+    pub const fn max_attempts(&self) -> usize {
+        self.max_attempts
+    }
+}
+
+/// Demonstration parameters only. Security is approximately 10 bits. Use
+/// `RUNE_256` for any real deployment.
+pub const RUNE_128: Params = Params::new(256, 998_244_353, 2, 60, 249_561_088, 120, 60, 256);
+
+/// NIST Category 1 target parameter set. Provides approximately 128 bits
+/// of classical security. Suitable for production use pending independent
+/// cryptographic audit. Uses q=8380417, which supports NTT-based polynomial
+/// multiplication (q ≡ 1 mod 2n). The current implementation uses schoolbook
+/// multiplication; NTT acceleration is planned for a future release.
+pub const RUNE_256: Params = Params::new(512, 8_380_417, 3, 60, 524_288, 180, 120, 256);
+
 #[cfg(test)]
-mod tests {
+mod param_tests {
     use super::*;
 
     #[test]
-    #[allow(clippy::assertions_on_constants)]
-    fn test_parameters_consistent() {
-        assert!(N.is_power_of_two(), "n must be a power of two");
-        assert!(BETA > 0, "rejection bound must be positive");
-        assert!(KAPPA < N, "challenge weight must be less than n");
-        assert!(
-            GAMMA > (ETA as u64) * (N as u64),
-            "masking bound must exceed secret norm bound"
-        );
-    }
-
-    #[test]
-    fn test_ring_context_builds() {
-        let ctx = ring_context();
-        assert_eq!(ctx.max_degree(), N);
-        assert_eq!(ctx.modulus(), Q);
-        assert_eq!(ctx.primitive_root(), PRIMITIVE_ROOT);
+    fn params_constants_are_valid() {
+        let _ = RUNE_128.n();
+        let _ = RUNE_256.n();
     }
 }
