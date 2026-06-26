@@ -4,19 +4,19 @@
 [![docs.rs](https://docs.rs/rune-ring/badge.svg)](https://docs.rs/rune-ring)
 [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 
-Rune is a post-quantum Ring-LWE ring signature library for authenticating a message while hiding which member of a public key ring produced the signature.
+Rune is a Rust ring signature library for authenticating a message while hiding which member of a public key ring produced the signature.
 
 ## What is a Ring Signature
 
 A ring signature lets one member of a public key set sign a message so that a verifier knows the signer belongs to the set, but cannot determine which member signed. The signer does not need coordination from the other ring members; their public keys are enough to build the anonymity set.
 
-Rune builds this primitive from lattice arithmetic over polynomial rings, using a sequential challenge chain and Fiat-Shamir hashing. The security target is post-quantum and does not rely on discrete logarithms or integer factorization.
+Rune uses lattice-based polynomial arithmetic with a sequential challenge chain and Fiat-Shamir hashing.
 
 ## Security Notice
 
 `RUNE_128` provides approximately 10 bits of classical security and must not be used in production. It exists for testing and performance measurement only.
 
-`RUNE_256` targets NIST Category 1, approximately 128 bits of classical security.
+`RUNE_256` is the default parameter set and targets approximately 128 bits of classical security.
 
 The implementation has not received a professional cryptographic audit. Use in production systems requires independent review.
 
@@ -55,7 +55,7 @@ fn main() -> Result<(), rune_ring::RuneError> {
 | Name | Security | q | Proof Size |
 | --- | --- | --- | --- |
 | `RUNE_128` | Approximately 10 bits, DO NOT USE IN PRODUCTION | 998244353 | `O(k * n)` |
-| `RUNE_256` | NIST Category 1, approximately 128 bits classical security | 8380417 | `O(k * n)` |
+| `RUNE_256` | Approximately 128 bits classical security | 8380417 | `O(k * n)` |
 
 ## Building and Testing
 

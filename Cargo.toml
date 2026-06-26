@@ -4,16 +4,15 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.70"
 authors = ["Naufal Ziyaadaturrahman <naufal@aleshnatt.com>"]
-description = "Post-quantum lattice-based ring signature scheme from Ring-LWE with sequential challenge chain construction"
+description = "Rust ring signature library built with lattice-based polynomial arithmetic"
 documentation = "https://docs.rs/rune-ring"
 homepage = "https://github.com/aleshnatt/rune"
 repository = "https://github.com/aleshnatt/rune"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
-keywords = ["cryptography", "post-quantum", "ring-signature", "lattice", "rlwe"]
+keywords = ["cryptography", "signature", "ring-signature", "lattice"]
 categories = ["cryptography"]
 exclude = [
-    "whitepaper/",
     ".github/",
     ".DS_Store",
     "/Cargo.lock",

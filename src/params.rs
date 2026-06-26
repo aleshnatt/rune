@@ -2,13 +2,11 @@
 
 use crate::math::MAX_N;
 
-/// System parameters for the Rune ring signature scheme.
+/// System parameters for Rune ring signatures.
 ///
 /// Construct via the provided constants [`RUNE_128`] or [`RUNE_256`].
 /// Custom parameter construction is intentionally not exposed: incorrect
-/// choices can silently reduce security or cause signing to fail. Both
-/// provided sets have been derived following the methodology of Ducas et al.
-/// (CRYSTALS-Dilithium, IACR TCHES 2018).
+/// choices can silently reduce security or cause signing to fail.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Params {
     n: usize,
@@ -119,11 +117,11 @@ impl Params {
 /// `RUNE_256` for any real deployment.
 pub const RUNE_128: Params = Params::new(256, 998_244_353, 2, 60, 249_561_088, 120, 60, 256);
 
-/// NIST Category 1 target parameter set. Provides approximately 128 bits
-/// of classical security. Suitable for production use pending independent
-/// cryptographic audit. Uses q=8380417, which supports NTT-based polynomial
-/// multiplication (q ≡ 1 mod 2n). The current implementation uses schoolbook
-/// multiplication; NTT acceleration is planned for a future release.
+/// Default parameter set. Provides approximately 128 bits of classical
+/// security. Suitable for production use pending independent cryptographic
+/// audit. Uses q=8380417, which supports NTT-based polynomial multiplication
+/// (q ≡ 1 mod 2n). The current implementation uses schoolbook multiplication;
+/// NTT acceleration is planned for a future release.
 pub const RUNE_256: Params = Params::new(512, 8_380_417, 3, 60, 524_288, 180, 120, 256);
 
 #[cfg(test)]

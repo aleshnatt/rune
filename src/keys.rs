@@ -16,7 +16,7 @@ use crate::params::Params;
 pub struct PublicKey {
     /// Common public ring element shared by every member of a ring.
     pub a: Poly,
-    /// Individual Ring-LWE public value `t = a * s + e`.
+    /// Individual public value `t = a * s + e`.
     pub t: Poly,
 }
 

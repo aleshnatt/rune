@@ -1,7 +1,7 @@
 //! Rune ring signatures.
 //!
-//! `rune-ring` implements a post-quantum lattice-based ring signature scheme
-//! from Ring-LWE using a sequential challenge chain construction.
+//! `rune-ring` authenticates messages while hiding which member of a public
+//! key ring produced the signature.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
